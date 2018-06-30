@@ -1,7 +1,9 @@
 package com.codepath.flixster;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Configuration;
+import android.support.annotation.Nullable;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,11 +12,15 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.codepath.flixster.models.Config;
-import com.codepath.flixster.models.Movie;
 import com.codepath.flixster.models.GlideApp;
+import com.codepath.flixster.models.Movie;
+
+import org.parceler.Parcels;
 
 import java.util.ArrayList;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
 import jp.wasabeef.glide.transformations.RoundedCornersTransformation;
 
 public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ViewHolder> {
@@ -63,7 +69,7 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ViewHolder> 
         //determine current orientation
         boolean isPortrait = context.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
 
-        // build url for podter image
+        // build url for poster image
         String imageUrl = config.getImageUrl(config.getPosterSize(), movie.getPosterPath());
 
         //if in portrait mode, load the poster image
@@ -91,21 +97,39 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ViewHolder> 
     }
 
     //create the viewholder as a static inner class
-    public static class ViewHolder extends RecyclerView.ViewHolder {
+    public class ViewHolder extends RecyclerView.ViewHolder implements  View.OnClickListener {
 
         // track view objects
-        ImageView ivPosterImage;
-        ImageView ivBackdropImage;
-        TextView tvTitle;
-        TextView tvOverview;
+        @Nullable @BindView(R.id.ivPosterImage) ImageView ivPosterImage;
+        @Nullable @BindView(R.id.ivBackdropImage) ImageView ivBackdropImage;
+        @BindView(R.id.tvOverview) TextView tvOverview;
+        @BindView(R.id.tvTitle) TextView tvTitle;
 
         public ViewHolder(View itemView) {
             super(itemView);
             //lookup view objects by id
-            ivPosterImage = (ImageView) itemView.findViewById(R.id.ivPosterImage);
-            ivBackdropImage = (ImageView) itemView.findViewById(R.id.ivBackdropImage);
-            tvOverview = (TextView) itemView.findViewById(R.id.tvOverview);
-            tvTitle = (TextView) itemView.findViewById(R.id.tvTitle);
+            ButterKnife.bind(this,itemView);
+            // add this as the itemView's OnClickListener
+            itemView.setOnClickListener(this);
+        }
+
+        // when the user clicks on a row, show MovieDetailsActivity for the selected movie
+        @Override
+        public void onClick(View view) {
+            // get item position
+            int position = getAdapterPosition();
+            // make sure the position is valid, i.e. actually exists in the view
+            if (position != RecyclerView.NO_POSITION) {
+                //get the movie at the position, this won't work if the class is static
+                Movie movie = movies.get(position);
+                //create intent for the new activity
+                Intent intent = new Intent(context, MovieDetailsActivity.class);
+                //serialize the movie using parceler, use its short name as a key
+                intent.putExtra(Movie.class.getSimpleName(), Parcels.wrap(movie));
+                intent.putExtra(Config.class.getSimpleName(), Parcels.wrap(config));
+                //show the activity
+                context.startActivity(intent);
+            }
         }
     }
 }
